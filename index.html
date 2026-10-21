@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>Masum AI — বাংলা প্রশ্নোত্তর</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b1020;--panel:#141c2f;--line:#29344c;--text:#f5f7fb;--muted:#aab5ca;--accent:#8b7cff;--accent2:#52dfbd}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#1c2850 0,var(--bg) 55%);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);min-height:100vh}
+    main{width:min(720px,100%);margin:auto;padding:28px 18px 40px}.brand{display:flex;align-items:center;gap:13px;margin:12px 0 28px}.logo{width:54px;height:54px;border-radius:17px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),#4fc9d8);font-size:27px}
+    h1{font-size:28px;margin:0}.sub{color:var(--muted);margin-top:5px;font-size:14px}.tag{margin-left:auto;border:1px solid #375b57;color:var(--accent2);padding:6px 9px;border-radius:99px;font-size:12px}
+    .card{background:rgba(20,28,47,.94);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 18px 60px #0002}.label{display:block;font-weight:650;margin-bottom:10px}
+    textarea{width:100%;resize:vertical;min-height:125px;background:#0c1325;border:1px solid #34415c;border-radius:14px;padding:15px;color:var(--text);font:inherit;font-size:16px;outline:none}textarea:focus{border-color:var(--accent)}
+    .row{display:flex;gap:10px;align-items:center;margin-top:13px;flex-wrap:wrap}.btn{border:0;border-radius:13px;padding:13px 17px;font-weight:700;font-size:15px;cursor:pointer}.primary{background:linear-gradient(110deg,var(--accent),#5d8df5);color:white;flex:1}.secondary{background:#242e46;color:#f5f7fb}.btn:disabled{opacity:.55;cursor:wait}
+    .hint{color:var(--muted);font-size:12px;line-height:1.55;margin-top:12px}.result{margin-top:20px;display:none}.result h2{font-size:17px;margin:0 0 12px}.answer{white-space:pre-wrap;line-height:1.75;color:#e6ecf8}.error{color:#ffb4b4}.foot{text-align:center;color:var(--muted);font-size:12px;line-height:1.6;margin-top:20px}
+    @media(max-width:440px){main{padding:20px 13px 30px}.card{padding:17px}h1{font-size:24px}.tag{display:none}}
+  </style>
+</head>
+<body>
+<main>
+  <header class="brand">
+    <div class="logo" aria-hidden="true">✦</div>
+    <div><h1>Masum AI</h1><div class="sub">বাংলায় প্রশ্ন করুন, সহজ উত্তর পান</div></div>
+    <span class="tag">AI Assistant</span>
+  </header>
+  <section class="card">
+    <label class="label" for="question">আপনার প্রশ্ন লিখুন</label>
+    <textarea id="question" maxlength="1500" placeholder="যেমন: বাংলাদেশের জাতীয় ফুল কী?"></textarea>
+    <div class="row">
+      <button id="ask" class="btn primary">✨ উত্তর তৈরি করুন</button>
+      <button id="clear" class="btn secondary" type="button">মুছুন</button>
+    </div>
+    <div class="hint">ব্যক্তিগত পাসওয়ার্ড, ব্যাংক তথ্য বা গোপন তথ্য লিখবেন না। AI-এর উত্তর ভুল হতে পারে—গুরুত্বপূর্ণ তথ্য যাচাই করুন।</div>
+    <section id="result" class="result" aria-live="polite">
+      <h2>উত্তর</h2><div id="answer" class="answer"></div>
+      <div class="row"><button id="copy" class="btn secondary" type="button">উত্তর কপি করুন</button></div>
+    </section>
+  </section>
+  <div class="foot">Masum AI • বাংলা প্রশ্নোত্তর<br>এই সাইটটি TikTok-এর সঙ্গে স্বয়ংক্রিয়ভাবে সংযুক্ত নয়।</div>
+</main>
+<script>
+const q = document.querySelector('#question'), ask = document.querySelector('#ask');
+const result = document.querySelector('#result'), answer = document.querySelector('#answer');
+ask.addEventListener('click', async () => {
+  const question = q.value.trim();
+  if (!question) { q.focus(); return; }
+  if (question.length > 1500) { answer.textContent = 'প্রশ্নটি ছোট করে লিখুন।'; result.style.display='block'; return; }
+  ask.disabled = true; ask.textContent = 'উত্তর তৈরি হচ্ছে…'; result.style.display='block';
+  answer.classList.remove('error'); answer.textContent = 'একটু অপেক্ষা করুন…';
+  try {
+    const res = await fetch('/api/answer', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({question})});
+    const data = await res.json().catch(()=>({}));
+    if (!res.ok) throw new Error(data.error || 'এখন উত্তর তৈরি করা যাচ্ছে না। পরে আবার চেষ্টা করুন।');
+    answer.textContent = data.answer || 'উত্তর পাওয়া যায়নি। আবার চেষ্টা করুন।';
+  } catch (e) { answer.classList.add('error'); answer.textContent = e.message || 'সংযোগে সমস্যা হয়েছে।'; }
+  finally { ask.disabled = false; ask.textContent = '✨ উত্তর তৈরি করুন'; }
+});
+document.querySelector('#clear').addEventListener('click',()=>{q.value='';answer.textContent='';result.style.display='none';q.focus();});
+document.querySelector('#copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(answer.textContent);document.querySelector('#copy').textContent='কপি হয়েছে ✓';setTimeout(()=>document.querySelector('#copy').textContent='উত্তর কপি করুন',1600)}catch{alert('উত্তরটি চেপে ধরে কপি করুন।')}});
+</script>
+</body>
+</html>
